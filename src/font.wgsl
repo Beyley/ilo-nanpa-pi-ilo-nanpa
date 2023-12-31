@@ -37,5 +37,10 @@ fn median(r: f32, g: f32, b: f32) -> f32 {
   var w = fwidth(sigDist);
   var opacity = smoothstep(0.5 - w, 0.5 + w, sigDist);
 
+  //Silly hack to optionally render a solid color instead of the texture
+  if(input.tex_coord.x == -1) {
+    return vec4<f32>(input.color);
+  }
+
   return vec4(input.color.rgb, opacity);
 }

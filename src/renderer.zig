@@ -205,6 +205,35 @@ pub const ReservedData = struct {
     }
 };
 
+pub inline fn reserveSolidQuad(
+    self: *Self,
+    pos: math.Vec2,
+    size: math.Vec2,
+    col: math.Vec4,
+) !void {
+    var reserved = try self.reserve(4, 6);
+    reserved.copyIn(&.{
+        pos,
+        pos.add(&math.vec2(size.x(), 0)),
+        pos.add(&math.vec2(0, size.y())),
+        pos.add(&size),
+    }, &.{
+        math.vec2(-1, -1),
+        math.vec2(-1, -1),
+        math.vec2(-1, -1),
+        math.vec2(-1, -1),
+    }, &.{
+        col, col, col, col,
+    }, &.{
+        0 + reserved.idx_offset,
+        2 + reserved.idx_offset,
+        1 + reserved.idx_offset,
+        1 + reserved.idx_offset,
+        2 + reserved.idx_offset,
+        3 + reserved.idx_offset,
+    });
+}
+
 pub inline fn reserveTexQuad(
     self: *Self,
     codepoint: Codepoint,
