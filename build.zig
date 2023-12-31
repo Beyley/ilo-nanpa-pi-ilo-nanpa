@@ -9,20 +9,12 @@ pub fn build(b: *std.Build) !void {
         .target = target,
         .optimize = optimize,
     });
-    const basisu = b.dependency("mach_basisu", .{
-        .target = target,
-        .optimize = optimize,
-    });
     const app = try mach_core.App.init(b, mach_core_dep.builder, .{
         .name = "ilo-nanpa-pi-ilo-nanpa",
         .src = "src/main.zig",
         .target = target,
         .optimize = optimize,
         .deps = &[_]std.build.ModuleDependency{
-            .{
-                .name = "mach-basisu",
-                .module = basisu.module("mach-basisu"),
-            },
             .{
                 .name = "mach",
                 .module = b.dependency("mach", .{
@@ -36,9 +28,6 @@ pub fn build(b: *std.Build) !void {
             },
         },
     });
-
-    // https://github.com/hexops/mach-basisu/blob/30897f45e8d2d58ac90f1e8fbe15ceabe2127adb/build.zig#L12
-    app.compile.linkLibrary(basisu.artifact("mach-basisu"));
 
     const run_step = b.step("run", "Run the app");
     run_step.dependOn(&app.run.step);

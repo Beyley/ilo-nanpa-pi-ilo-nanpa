@@ -1,0 +1,1 @@
+msdf-atlas-gen.exe -font _fairfax_pona_hd.ttf -charset glyphset.txt -size 64 -format png -imageout atlas.png -json atlas.json
