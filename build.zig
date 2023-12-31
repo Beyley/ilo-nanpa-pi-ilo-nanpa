@@ -1,0 +1,54 @@
+const std = @import("std");
+const mach_core = @import("mach_core");
+
+pub fn build(b: *std.Build) !void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    const mach_core_dep = b.dependency("mach_core", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const basisu = b.dependency("mach_basisu", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    const app = try mach_core.App.init(b, mach_core_dep.builder, .{
+        .name = "ilo-nanpa-pi-ilo-nanpa",
+        .src = "src/main.zig",
+        .target = target,
+        .optimize = optimize,
+        .deps = &[_]std.build.ModuleDependency{
+            .{
+                .name = "mach-basisu",
+                .module = basisu.module("mach-basisu"),
+            },
+            .{
+                .name = "mach",
+                .module = b.dependency("mach", .{
+                    .target = target,
+                    .optimize = optimize,
+                }).module("mach"),
+            },
+            .{
+                .name = "zigimg",
+                .module = b.dependency("zigimg", .{}).module("zigimg"),
+            },
+        },
+    });
+
+    // https://github.com/hexops/mach-basisu/blob/30897f45e8d2d58ac90f1e8fbe15ceabe2127adb/build.zig#L12
+    app.compile.linkLibrary(basisu.artifact("mach-basisu"));
+
+    const run_step = b.step("run", "Run the app");
+    run_step.dependOn(&app.run.step);
+
+    const unit_tests = b.addTest(.{
+        .root_source_file = .{ .path = "src/main.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+    const run_unit_tests = b.addRunArtifact(unit_tests);
+    const test_step = b.step("test", "Run unit tests");
+    test_step.dependOn(&run_unit_tests.step);
+}

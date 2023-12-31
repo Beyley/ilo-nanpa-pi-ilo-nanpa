@@ -1,0 +1,27 @@
+.{
+    .name = "ilo-nanpa-pi-ilo-nanpa",
+    .version = "0.1.0",
+    .dependencies = .{
+        .mach_core = .{
+            .url = "https://pkg.machengine.org/mach-core/90c927e20d045035152d9b0b421ea45db7e5569c.tar.gz",
+            .hash = "12209c255c69822b57cd8906754bbee815e69678741d48a64e945168e611874da662",
+        },
+        .mach_basisu = .{
+            .url = "https://pkg.machengine.org/mach-basisu/30897f45e8d2d58ac90f1e8fbe15ceabe2127adb.tar.gz",
+            .hash = "1220db419f993fe9204580f761f8d805a9cb07fa910f182899089ad0f4873bfd8b49",
+        },
+        .mach = .{
+            .url = "https://pkg.machengine.org/mach/260802f7771c651246930455dfd7de7a75c9869a.tar.gz",
+            .hash = "1220a2351f6f6f261a9a1f7c17a412acc77bdaa2204daabb0b0dde03f768981a0044",
+        },
+        .zigimg = .{
+            .url = "https://github.com/zigimg/zigimg/archive/a25ad036e1727628d756b342791bbaa3fcf01eda.tar.gz",
+            .hash = "1220c844f95c478f9250197251a8f8052e08ba80b5563876870fca6b7a3214399e92",
+        },
+    },
+    .paths = .{
+        "src/",
+        "build.zig",
+        "build.zig.zon",
+    },
+}
