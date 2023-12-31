@@ -205,6 +205,115 @@ pub const ReservedData = struct {
     }
 };
 
+pub fn renderButton(self: *Self, pos: math.Vec2, size: math.Vec2, col: math.Vec4, text: []const Codepoint, text_size: f32) !void {
+    const button_outline_width = 2;
+    const button_outline_width_vec = comptime math.vec2(button_outline_width, button_outline_width);
+
+    const outline_color = comptime math.vec4(1, 1, 1, 1);
+
+    const text_padding = 2;
+
+    const text_width = self.textWidth(text, text_size);
+
+    const fixed_size = math.vec2(@max(size.x(), text_width + text_padding * 2), @max(size.y(), text_size + text_padding * 2));
+
+    //Render the backdrop of the button
+    try self.reserveSolidQuad(pos, fixed_size, col);
+    //Render the left edge
+    try self.reserveSolidQuad(pos.sub(&button_outline_width_vec), math.vec2(button_outline_width, fixed_size.y() + button_outline_width * 2), outline_color);
+    //Render the right edge
+    try self.reserveSolidQuad(pos.add(&math.vec2(fixed_size.x(), -button_outline_width)), math.vec2(button_outline_width, fixed_size.y() + button_outline_width * 2), outline_color);
+    //Render the top edge
+    try self.reserveSolidQuad(pos.sub(&math.vec2(0, button_outline_width)), math.vec2(fixed_size.x(), button_outline_width), outline_color);
+    //Render the bottom edge
+    try self.reserveSolidQuad(pos.add(&math.vec2(0, fixed_size.y())), math.vec2(fixed_size.x(), button_outline_width), outline_color);
+
+    const text_x = fixed_size.x() / 2 - text_width / 2;
+    const text_y = fixed_size.y() / 2 - text_size / 2;
+
+    const text_pos = math.vec2(text_x, text_y);
+
+    var text_writer = self.writer(text_pos.add(&pos), math.vec4(1, 1, 1, 1), text_size);
+    try text_writer.writeAll(text);
+}
+
+///Calculates the width of some text
+pub fn textWidth(self: *Self, codepoints: []const Codepoint, text_size: f32) f32 {
+    var width: f32 = 0;
+    for (codepoints) |codepoint| {
+        const size = self.gfx.getTexSizeFromAtlas(@intFromEnum(codepoint));
+
+        width += size.x() * (text_size / @as(f32, @floatFromInt(self.gfx.atlas.value.atlas.size)));
+    }
+    return width;
+}
+
+const TextWriter = struct {
+    renderer: *Self,
+    scale: f32,
+    /// The original text size of the atlas
+    text_size: f32,
+    curr_pos: math.Vec2,
+    color: math.Vec4,
+    ///Whether or not this is a "counting" writer, eg. whether or not this is used to measure text
+    counting: bool = false,
+
+    pub fn write(self: *TextWriter, codepoint: Codepoint) !void {
+        const uvs = self.renderer.gfx.getTexUVsFromAtlas(@intFromEnum(codepoint));
+        const size = self.renderer.gfx.getTexSizeFromAtlas(@intFromEnum(codepoint));
+
+        const position = self.curr_pos;
+        const scale = math.vec2(self.scale, self.scale);
+        const col = self.color;
+
+        const offset = math.vec2(0, self.text_size / 2 - size.y() / 2).mul(&scale);
+
+        //Add the size of the character to the position
+        defer self.curr_pos = self.curr_pos.add(&math.vec2(size.x() * self.scale, 0));
+
+        if (self.counting) return;
+
+        //Reserve a single quad
+        var reserved = try self.renderer.reserve(4, 6);
+        reserved.copyIn(&.{
+            position.add(&offset),
+            position.add(&math.vec2(size.x(), 0).mul(&scale)).add(&offset),
+            position.add(&math.vec2(0, size.y()).mul(&scale)).add(&offset),
+            position.add(&size.mul(&scale)).add(&offset),
+        }, &.{
+            math.vec2(uvs.left, uvs.top),
+            math.vec2(uvs.right, uvs.top),
+            math.vec2(uvs.left, uvs.bottom),
+            math.vec2(uvs.right, uvs.bottom),
+        }, &.{
+            col, col, col, col,
+        }, &.{
+            0 + reserved.idx_offset,
+            2 + reserved.idx_offset,
+            1 + reserved.idx_offset,
+            1 + reserved.idx_offset,
+            2 + reserved.idx_offset,
+            3 + reserved.idx_offset,
+        });
+    }
+
+    pub fn writeAll(self: *TextWriter, codepoints: []const Codepoint) !void {
+        for (codepoints) |codepoint| {
+            try self.write(codepoint);
+        }
+    }
+};
+
+pub fn writer(self: *Self, pos: math.Vec2, col: math.Vec4, text_size: f32) TextWriter {
+    return TextWriter{
+        .curr_pos = pos,
+        .color = col,
+        .renderer = self,
+        .text_size = @floatFromInt(self.gfx.atlas.value.atlas.size),
+        .scale = text_size / @as(f32, @floatFromInt(self.gfx.atlas.value.atlas.size)),
+    };
+}
+
 pub inline fn reserveSolidQuad(
     self: *Self,
     pos: math.Vec2,
@@ -234,38 +343,38 @@ pub inline fn reserveSolidQuad(
     });
 }
 
-pub inline fn reserveTexQuad(
-    self: *Self,
-    codepoint: Codepoint,
-    position: math.Vec2,
-    scale: math.Vec2,
-    col: math.Vec4,
-) !void {
-    const uvs = self.gfx.getTexUVsFromAtlas(@intFromEnum(codepoint));
-    const size = self.gfx.getTexSizeFromAtlas(@intFromEnum(codepoint));
+// pub inline fn reserveTexQuad(
+//     self: *Self,
+//     codepoint: Codepoint,
+//     position: math.Vec2,
+//     scale: math.Vec2,
+//     col: math.Vec4,
+// ) !void {
+//     const uvs = self.gfx.getTexUVsFromAtlas(@intFromEnum(codepoint));
+//     const size = self.gfx.getTexSizeFromAtlas(@intFromEnum(codepoint));
 
-    var reserved = try self.reserve(4, 6);
-    reserved.copyIn(&.{
-        position,
-        position.add(&math.vec2(size.x(), 0).mul(&scale)),
-        position.add(&math.vec2(0, size.y()).mul(&scale)),
-        position.add(&size.mul(&scale)),
-    }, &.{
-        math.vec2(uvs.left, uvs.top),
-        math.vec2(uvs.right, uvs.top),
-        math.vec2(uvs.left, uvs.bottom),
-        math.vec2(uvs.right, uvs.bottom),
-    }, &.{
-        col, col, col, col,
-    }, &.{
-        0 + reserved.idx_offset,
-        2 + reserved.idx_offset,
-        1 + reserved.idx_offset,
-        1 + reserved.idx_offset,
-        2 + reserved.idx_offset,
-        3 + reserved.idx_offset,
-    });
-}
+//     var reserved = try self.reserve(4, 6);
+//     reserved.copyIn(&.{
+//         position,
+//         position.add(&math.vec2(size.x(), 0).mul(&scale)),
+//         position.add(&math.vec2(0, size.y()).mul(&scale)),
+//         position.add(&size.mul(&scale)),
+//     }, &.{
+//         math.vec2(uvs.left, uvs.top),
+//         math.vec2(uvs.right, uvs.top),
+//         math.vec2(uvs.left, uvs.bottom),
+//         math.vec2(uvs.right, uvs.bottom),
+//     }, &.{
+//         col, col, col, col,
+//     }, &.{
+//         0 + reserved.idx_offset,
+//         2 + reserved.idx_offset,
+//         1 + reserved.idx_offset,
+//         1 + reserved.idx_offset,
+//         2 + reserved.idx_offset,
+//         3 + reserved.idx_offset,
+//     });
+// }
 
 pub fn reserve(self: *Self, vtx_count: u64, idx_count: u64) !ReservedData {
     //Assert that we arent trying to reserve more than the max buffer size

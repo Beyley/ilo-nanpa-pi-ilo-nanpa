@@ -67,17 +67,24 @@ pub fn update(app: *App) !bool {
 
     const scale = 4;
     const scale_vec = math.vec2(scale, scale);
+    _ = scale_vec;
 
     try app.renderer.begin();
 
-    try app.renderer.reserveSolidQuad(math.vec2(0, 0), math.vec2(1920, 500), math.vec4(0.5, 0.5, 0.5, 1));
+    // try app.renderer.reserveSolidQuad(math.vec2(0, 0), math.vec2(1920, 500), math.vec4(0.5, 0.5, 0.5, 1));
 
-    var x: f32 = 0;
-    const codepoints: []const Codepoint = &.{ .kijetesantakalu, .tonsi, .li, .lanpan, .e, .soko };
-    inline for (codepoints) |codepoint| {
-        try app.renderer.reserveTexQuad(codepoint, math.vec2(x, 0), scale_vec, math.vec4(1, 1, 1, 1));
-        x += app.gfx.getTexSizeFromAtlas(@intFromEnum(codepoint)).x() * scale;
-    }
+    const codepoints: []const Codepoint = &.{ .ale, .ale, .ale, .ale, .ale, .ale, .ale, .ale, .ale, .ale, .luka, .luka };
+    try app.renderer.renderButton(math.vec2(10, 10), math.vec2(400, 100), math.vec4(0.5, 0.5, 0.5, 1), codepoints, 32);
+
+    // var x: f32 = 0;
+
+    // var text_writer = app.renderer.writer(math.vec2(0, 0), math.vec4(1, 1, 1, 1), 128);
+    // try text_writer.writeAll(codepoints[0..4]);
+    // try text_writer.writeAll(codepoints[4..]);
+    // inline for (codepoints) |codepoint| {
+    //     try app.renderer.reserveTexQuad(codepoint, math.vec2(x, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    //     x += app.gfx.getTexSizeFromAtlas(@intFromEnum(codepoint)).x() * scale;
+    // }
 
     try app.renderer.end();
     try app.renderer.draw(pass);
