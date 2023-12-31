@@ -19,20 +19,17 @@ metrics: struct {
 glyphs: []const struct {
     unicode: u21,
     advance: f32,
-    planeBounds: ?struct {
-        left: f32,
-        right: f32,
-        top: f32,
-        bottom: f32,
-    } = null,
-    atlasBounds: ?struct {
-        left: f32,
-        right: f32,
-        top: f32,
-        bottom: f32,
-    } = null,
+    planeBounds: ?Bounds = null,
+    atlasBounds: ?Bounds = null,
 },
 kerning: []const struct {},
+
+pub const Bounds = struct {
+    left: f32,
+    right: f32,
+    top: f32,
+    bottom: f32,
+};
 
 const Self = @This();
 

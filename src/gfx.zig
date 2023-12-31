@@ -17,12 +17,45 @@ font_texture_bind_group: *gpu.BindGroup,
 projection_matrix_bind_group: *gpu.BindGroup,
 projection_matrix_buffer: *gpu.Buffer,
 vertex_buffer: *gpu.Buffer,
+atlas: std.json.Parsed(Atlas),
+codepoint_mapping: std.AutoHashMap(u21, Atlas.Bounds),
 
 const Self = @This();
 
+pub fn getTexUVsFromAtlas(self: Self, codepoint: u21) Atlas.Bounds {
+    if (self.codepoint_mapping.get(codepoint)) |bounds| {
+        return bounds;
+    }
+
+    unreachable;
+}
+
+pub fn getTexSizeFromAtlas(self: Self, codepoint: u21) math.Vec2 {
+    if (self.codepoint_mapping.get(codepoint)) |bounds| {
+        return math.vec2(
+            (bounds.right - bounds.left) * @as(f32, @floatFromInt(self.atlas.value.atlas.width)),
+            (bounds.bottom - bounds.top) * @as(f32, @floatFromInt(self.atlas.value.atlas.height)),
+        );
+    }
+
+    unreachable;
+}
+
 pub fn init() !Self {
     var atlas = try Atlas.readAtlas(core.allocator);
-    defer atlas.deinit();
+
+    var codepoint_mapping = std.AutoHashMap(u21, Atlas.Bounds).init(core.allocator);
+
+    for (atlas.value.glyphs) |glyph| {
+        if (glyph.atlasBounds) |bounds| {
+            try codepoint_mapping.put(glyph.unicode, .{
+                .top = 1 - bounds.top / @as(f32, @floatFromInt(atlas.value.atlas.height)),
+                .bottom = 1 - bounds.bottom / @as(f32, @floatFromInt(atlas.value.atlas.height)),
+                .left = bounds.left / @as(f32, @floatFromInt(atlas.value.atlas.width)),
+                .right = bounds.right / @as(f32, @floatFromInt(atlas.value.atlas.width)),
+            });
+        }
+    }
 
     var img_stream = zigimg.Image.Stream{ .const_buffer = .{ .pos = 0, .buffer = @embedFile("atlas.png") } };
     var image = try zigimg.png.load(&img_stream, core.allocator, .{ .temp_allocator = core.allocator });
@@ -233,32 +266,56 @@ pub fn init() !Self {
                 .vertex = gpu.VertexState{
                     .module = shader_module,
                     .entry_point = "vertex_main",
-                    .buffers = @ptrCast(&gpu.VertexBufferLayout.init(.{
-                        .array_stride = @sizeOf(FontVertex),
-                        .attributes = &.{
-                            gpu.VertexAttribute{
-                                .format = .float32x2,
-                                .offset = @offsetOf(FontVertex, "pos"),
-                                .shader_location = 0,
+                    .buffers = @ptrCast(&[_]gpu.VertexBufferLayout{
+                        gpu.VertexBufferLayout.init(.{
+                            .array_stride = @sizeOf(math.Vec2),
+                            // .array_stride = @sizeOf(FontVertex),
+                            .attributes = &.{
+                                gpu.VertexAttribute{
+                                    .format = .float32x2,
+                                    .offset = 0,
+                                    // .offset = @offsetOf(FontVertex, "pos"),
+                                    .shader_location = 0,
+                                },
                             },
-                            gpu.VertexAttribute{
-                                .format = .float32x2,
-                                .offset = @offsetOf(FontVertex, "tex_coord"),
-                                .shader_location = 1,
+                        }),
+                        gpu.VertexBufferLayout.init(
+                            .{
+                                .array_stride = @sizeOf(math.Vec2),
+                                // .array_stride = @sizeOf(FontVertex),
+                                .attributes = &.{
+                                    gpu.VertexAttribute{
+                                        .format = .float32x2,
+                                        .offset = 0,
+                                        // .offset = @offsetOf(FontVertex, "tex_coord"),
+                                        .shader_location = 1,
+                                    },
+                                },
                             },
-                            gpu.VertexAttribute{
-                                .format = .float32x4,
-                                .offset = @offsetOf(FontVertex, "col"),
-                                .shader_location = 2,
+                        ),
+                        gpu.VertexBufferLayout.init(
+                            .{
+                                .array_stride = @sizeOf(math.Vec4),
+                                // .array_stride = @sizeOf(FontVertex),
+                                .attributes = &.{
+                                    gpu.VertexAttribute{
+                                        .format = .float32x4,
+                                        .offset = 0,
+                                        // .offset = @offsetOf(FontVertex, "col"),
+                                        .shader_location = 2,
+                                    },
+                                },
                             },
-                        },
-                    })),
-                    .buffer_count = 1,
+                        ),
+                    }),
+                    .buffer_count = 3,
                 },
                 .layout = pipeline_layout,
             };
             break :blk core.device.createRenderPipeline(&pipeline_descriptor);
         },
+        .atlas = atlas,
+        .codepoint_mapping = codepoint_mapping,
     };
 
     //TODO: is this fine? shouldnt i be using framebuffer size?
@@ -282,4 +339,12 @@ pub fn updateProjectionMatrix(self: Self, size: core.Size) !void {
             ).transpose(),
         },
     );
+}
+
+pub fn deinit(self: *Self) void {
+    self.font_pipeline.release();
+    self.font_texture_bind_group.release();
+    self.vertex_buffer.release();
+    self.atlas.deinit();
+    self.codepoint_mapping.deinit();
 }

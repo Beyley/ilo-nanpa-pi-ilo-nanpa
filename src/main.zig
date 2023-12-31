@@ -6,10 +6,12 @@ const math_helpers = @import("math_helpers.zig");
 const zigimg = @import("zigimg");
 const Atlas = @import("atlas.zig");
 const Gfx = @import("gfx.zig");
+const Renderer = @import("renderer.zig");
 
 pub const App = @This();
 
 gfx: Gfx,
+renderer: Renderer,
 
 pub fn init(app: *App) !void {
     try core.init(.{
@@ -20,15 +22,16 @@ pub fn init(app: *App) !void {
 
     app.* = .{
         .gfx = try Gfx.init(),
+        .renderer = undefined,
     };
+    app.renderer = try Renderer.init(core.allocator, &app.*.gfx);
 }
 
 pub fn deinit(app: *App) void {
     defer core.deinit();
 
-    app.gfx.font_pipeline.release();
-    app.gfx.font_texture_bind_group.release();
-    app.gfx.vertex_buffer.release();
+    app.gfx.deinit();
+    app.renderer.deinit();
 }
 
 pub fn update(app: *App) !bool {
@@ -55,11 +58,24 @@ pub fn update(app: *App) !bool {
         .color_attachments = &.{color_attachment},
     });
     const pass = encoder.beginRenderPass(&render_pass_info);
-    pass.setPipeline(app.gfx.font_pipeline);
-    pass.setVertexBuffer(0, app.gfx.vertex_buffer, 0, @sizeOf(Gfx.FontVertex) * 6);
-    pass.setBindGroup(0, app.gfx.projection_matrix_bind_group, null);
-    pass.setBindGroup(1, app.gfx.font_texture_bind_group, null);
-    pass.draw(6, 1, 0, 0);
+    // pass.setPipeline(app.gfx.font_pipeline);
+    // pass.setVertexBuffer(0, app.gfx.vertex_buffer, 0, @sizeOf(Gfx.FontVertex) * 6);
+    // pass.setBindGroup(0, app.gfx.projection_matrix_bind_group, null);
+    // pass.setBindGroup(1, app.gfx.font_texture_bind_group, null);
+    // pass.draw(6, 1, 0, 0);
+
+    const scale = 4;
+    const scale_vec = math.vec2(scale, scale);
+
+    try app.renderer.begin();
+    try app.renderer.reserveTexQuad(0xF1980, math.vec2(0, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    try app.renderer.reserveTexQuad(0xF197E, math.vec2(70 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    try app.renderer.reserveTexQuad(0xF1927, math.vec2(140 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    try app.renderer.reserveTexQuad(0xF1985, math.vec2(200 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    try app.renderer.reserveTexQuad(0xF1909, math.vec2(270 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    try app.renderer.reserveTexQuad(0xF1981, math.vec2(340 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    try app.renderer.end();
+    try app.renderer.draw(pass);
     pass.end();
     pass.release();
 
