@@ -5,6 +5,7 @@ const math = @import("mach").math;
 const math_helpers = @import("math_helpers.zig");
 const zigimg = @import("zigimg");
 const Atlas = @import("atlas.zig");
+const Codepoint = @import("codepoint.zig").Codepoint;
 
 const Gfx = @import("gfx.zig");
 
@@ -206,13 +207,13 @@ pub const ReservedData = struct {
 
 pub inline fn reserveTexQuad(
     self: *Self,
-    codepoint: u21,
+    codepoint: Codepoint,
     position: math.Vec2,
     scale: math.Vec2,
     col: math.Vec4,
 ) !void {
-    const uvs = self.gfx.getTexUVsFromAtlas(codepoint);
-    const size = self.gfx.getTexSizeFromAtlas(codepoint);
+    const uvs = self.gfx.getTexUVsFromAtlas(@intFromEnum(codepoint));
+    const size = self.gfx.getTexSizeFromAtlas(@intFromEnum(codepoint));
 
     var reserved = try self.reserve(4, 6);
     reserved.copyIn(&.{

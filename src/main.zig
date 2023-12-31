@@ -7,6 +7,7 @@ const zigimg = @import("zigimg");
 const Atlas = @import("atlas.zig");
 const Gfx = @import("gfx.zig");
 const Renderer = @import("renderer.zig");
+const Codepoint = @import("codepoint.zig").Codepoint;
 
 pub const App = @This();
 
@@ -68,12 +69,20 @@ pub fn update(app: *App) !bool {
     const scale_vec = math.vec2(scale, scale);
 
     try app.renderer.begin();
-    try app.renderer.reserveTexQuad(0xF1980, math.vec2(0, 0), scale_vec, math.vec4(1, 1, 1, 1));
-    try app.renderer.reserveTexQuad(0xF197E, math.vec2(70 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
-    try app.renderer.reserveTexQuad(0xF1927, math.vec2(140 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
-    try app.renderer.reserveTexQuad(0xF1985, math.vec2(200 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
-    try app.renderer.reserveTexQuad(0xF1909, math.vec2(270 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
-    try app.renderer.reserveTexQuad(0xF1981, math.vec2(340 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
+
+    var x: f32 = 0;
+    const codepoints: []const Codepoint = &.{ .kijetesantakalu, .tonsi, .li, .lanpan, .e, .soko };
+    inline for (codepoints) |codepoint| {
+        try app.renderer.reserveTexQuad(codepoint, math.vec2(x, 0), scale_vec, math.vec4(1, 1, 1, 1));
+        x += app.gfx.getTexSizeFromAtlas(@intFromEnum(codepoint)).x() * scale;
+    }
+
+    // try app.renderer.reserveTexQuad(0xF1980, math.vec2(0, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    // try app.renderer.reserveTexQuad(0xF197E, math.vec2(70 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    // try app.renderer.reserveTexQuad(0xF1927, math.vec2(140 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    // try app.renderer.reserveTexQuad(0xF1985, math.vec2(200 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    // try app.renderer.reserveTexQuad(0xF1909, math.vec2(270 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
+    // try app.renderer.reserveTexQuad(0xF1981, math.vec2(340 * scale, 0), scale_vec, math.vec4(1, 1, 1, 1));
     try app.renderer.end();
     try app.renderer.draw(pass);
     pass.end();
