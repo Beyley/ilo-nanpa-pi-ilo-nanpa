@@ -205,17 +205,37 @@ pub const ReservedData = struct {
     }
 };
 
-pub fn renderButton(self: *Self, pos: math.Vec2, size: math.Vec2, col: math.Vec4, text: []const Codepoint, text_size: f32) !void {
+pub const Origin = enum {
+    tl,
+    bl,
+    br,
+    tr,
+};
+
+pub const Bounds = struct {
+    pos: math.Vec2,
+    size: math.Vec2,
+};
+
+pub const button_text_padding = 2;
+
+///Renders a button, returning the size of the button, which may not match the passed size, as it will auto-size the button to fit the text within
+pub fn renderButton(self: *Self, raw_pos: math.Vec2, size: math.Vec2, col: math.Vec4, text: []const Codepoint, text_size: f32, origin: Origin) !Bounds {
     const button_outline_width = 2;
     const button_outline_width_vec = comptime math.vec2(button_outline_width, button_outline_width);
 
     const outline_color = comptime math.vec4(1, 1, 1, 1);
 
-    const text_padding = 2;
-
     const text_width = self.textWidth(text, text_size);
 
-    const fixed_size = math.vec2(@max(size.x(), text_width + text_padding * 2), @max(size.y(), text_size + text_padding * 2));
+    const fixed_size = math.vec2(@max(size.x(), text_width + button_text_padding * 2), @max(size.y(), text_size + button_text_padding * 2));
+
+    const pos: math.Vec2 = switch (origin) {
+        .tl => raw_pos,
+        .bl => raw_pos.add(&math.vec2(0, fixed_size.y())),
+        .br => raw_pos.add(&fixed_size),
+        .tr => raw_pos.add(&math.vec2(fixed_size.x(), 0)),
+    };
 
     //Render the backdrop of the button
     try self.reserveSolidQuad(pos, fixed_size, col);
@@ -235,16 +255,28 @@ pub fn renderButton(self: *Self, pos: math.Vec2, size: math.Vec2, col: math.Vec4
 
     var text_writer = self.writer(text_pos.add(&pos), math.vec4(1, 1, 1, 1), text_size);
     try text_writer.writeAll(text);
+
+    return .{ .pos = pos, .size = fixed_size };
 }
+
+pub const letter_padding = 0;
+// pub const letter_padding = 4;
 
 ///Calculates the width of some text
 pub fn textWidth(self: *Self, codepoints: []const Codepoint, text_size: f32) f32 {
     var width: f32 = 0;
     for (codepoints) |codepoint| {
-        const size = self.gfx.getTexSizeFromAtlas(@intFromEnum(codepoint));
+        _ = codepoint;
+        //Every character should be monospace
+        const size = math.vec2(text_size, text_size);
 
-        width += size.x() * (text_size / @as(f32, @floatFromInt(self.gfx.atlas.value.atlas.size)));
+        width += (size.x() + letter_padding) * (text_size / @as(f32, @floatFromInt(self.gfx.atlas.value.atlas.size)));
     }
+
+    if (codepoints.len > 0) {
+        width -= letter_padding;
+    }
+
     return width;
 }
 
@@ -266,10 +298,14 @@ const TextWriter = struct {
         const scale = math.vec2(self.scale, self.scale);
         const col = self.color;
 
-        const offset = math.vec2(0, self.text_size / 2 - size.y() / 2).mul(&scale);
+        const px_text_size = self.text_size * self.scale;
+        _ = px_text_size;
+
+        const offset = math.vec2(if (codepoint == .colon) 0 else self.text_size / 2 - size.x() / 2, self.text_size / 2 - size.y() / 2).mul(&scale);
 
         //Add the size of the character to the position
-        defer self.curr_pos = self.curr_pos.add(&math.vec2(size.x() * self.scale, 0));
+        defer self.curr_pos = self.curr_pos.add(&math.vec2((self.text_size + letter_padding) * self.scale, 0));
+        // defer self.curr_pos = self.curr_pos.add(&math.vec2((size.x() + letter_padding) * self.scale, 0));
 
         if (self.counting) return;
 
@@ -302,7 +338,92 @@ const TextWriter = struct {
             try self.write(codepoint);
         }
     }
+
+    pub const NumberFormattingOptions = struct {
+        //Whether or not to use "san" as three
+        san: bool = false,
+        four_type: enum {
+            neja,
+            po,
+            none,
+        } = .none,
+        //Whether or not to use "likujo" as seven
+        likujo: bool = false,
+    };
+
+    pub fn writeNumber(self: *TextWriter, number: anytype, options: NumberFormattingOptions) !void {
+        var sum = number;
+
+        var negative = false;
+
+        //If the number is negative, negate it, and write "weka" at the start
+        if (sum < 0) {
+            sum = -sum;
+
+            negative = true;
+        }
+
+        if (sum == 0) {
+            try self.write(.ala);
+            return;
+        }
+
+        while (sum >= 100) : (sum -= 100) {
+            try self.write(.ale);
+        }
+
+        while (sum >= 20) : (sum -= 20) {
+            try self.write(.mute);
+        }
+
+        if (options.likujo)
+            while (sum >= 7) : (sum -= 7) {
+                try self.write(.likujo);
+            };
+
+        while (sum >= 5) : (sum -= 5) {
+            try self.write(.luka);
+        }
+
+        switch (options.four_type) {
+            .neja, .po => |four_type| {
+                while (sum >= 4) : (sum -= 4) {
+                    switch (four_type) {
+                        .neja => try self.write(.neja),
+                        .po => try self.write(.po),
+                        else => unreachable,
+                    }
+                }
+            },
+            .none => {},
+        }
+
+        if (options.san) {
+            while (sum >= 3) : (sum -= 3) {
+                try self.write(.san);
+            }
+        }
+
+        while (sum >= 2) : (sum -= 2) {
+            try self.write(.tu);
+        }
+
+        while (sum >= 1) : (sum -= 1) {
+            try self.write(.wan);
+        }
+
+        if (negative) {
+            try self.write(.weka);
+        }
+    }
 };
+
+pub fn writeText(self: *Self, pos: math.Vec2, text_size: f32, text: []const Codepoint) !Bounds {
+    var text_writer = self.writer(pos, math.vec4(1, 1, 1, 1), text_size);
+    try text_writer.writeAll(text);
+
+    return .{ .pos = pos, .size = text_writer.curr_pos.sub(&pos) };
+}
 
 pub fn writer(self: *Self, pos: math.Vec2, col: math.Vec4, text_size: f32) TextWriter {
     return TextWriter{

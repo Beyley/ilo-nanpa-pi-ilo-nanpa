@@ -14,6 +14,8 @@ pub const App = @This();
 gfx: Gfx,
 renderer: Renderer,
 
+working_number: i64,
+
 pub fn init(app: *App) !void {
     try core.init(.{
         .title = "ilo nanpa pi ilo nanpa",
@@ -24,6 +26,7 @@ pub fn init(app: *App) !void {
     app.* = .{
         .gfx = try Gfx.init(),
         .renderer = undefined,
+        .working_number = 0,
     };
     app.renderer = try Renderer.init(core.allocator, &app.*.gfx);
 }
@@ -35,12 +38,30 @@ pub fn deinit(app: *App) void {
     app.renderer.deinit();
 }
 
+pub fn button(loc: Renderer.Bounds, interact_loc: ?math.Vec2) bool {
+    if (interact_loc) |mouse_loc| {
+        const bottom_right = loc.pos.add(&loc.size);
+
+        //If the event was within the button, return true for a hit
+        if (mouse_loc.x() > loc.pos.x() and mouse_loc.y() > loc.pos.y() and mouse_loc.x() < bottom_right.x() and mouse_loc.y() < bottom_right.y()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 pub fn update(app: *App) !bool {
+    //Set to null when theres no interact event this frame, set to a position when an interact event happens
+    var interact_loc: ?math.Vec2 = null;
+
     var event_iter = core.pollEvents();
     while (event_iter.next()) |event| {
         switch (event) {
             .close => return true,
             .framebuffer_resize => |size| try app.gfx.updateProjectionMatrix(size),
+            //Whenever we get a mouse release event, set the interact location to the release position
+            .mouse_release => |release| interact_loc = math.vec2(@floatCast(release.pos.x), @floatCast(release.pos.y)),
             else => {},
         }
     }
@@ -59,32 +80,84 @@ pub fn update(app: *App) !bool {
         .color_attachments = &.{color_attachment},
     });
     const pass = encoder.beginRenderPass(&render_pass_info);
-    // pass.setPipeline(app.gfx.font_pipeline);
-    // pass.setVertexBuffer(0, app.gfx.vertex_buffer, 0, @sizeOf(Gfx.FontVertex) * 6);
-    // pass.setBindGroup(0, app.gfx.projection_matrix_bind_group, null);
-    // pass.setBindGroup(1, app.gfx.font_texture_bind_group, null);
-    // pass.draw(6, 1, 0, 0);
-
-    const scale = 4;
-    const scale_vec = math.vec2(scale, scale);
-    _ = scale_vec;
 
     try app.renderer.begin();
 
-    // try app.renderer.reserveSolidQuad(math.vec2(0, 0), math.vec2(1920, 500), math.vec4(0.5, 0.5, 0.5, 1));
+    const number_size = 128;
 
-    const codepoints: []const Codepoint = &.{ .ale, .ale, .ale, .ale, .ale, .ale, .ale, .ale, .ale, .ale, .luka, .luka };
-    try app.renderer.renderButton(math.vec2(10, 10), math.vec2(400, 100), math.vec4(0.5, 0.5, 0.5, 1), codepoints, 32);
+    {
+        var text_writer = app.renderer.writer(math.vec2(10, 10), math.vec4(1, 1, 1, 1), number_size);
 
-    // var x: f32 = 0;
+        try text_writer.writeAll(&.{ .nanpa, .colon });
+        // text_writer.curr_pos = text_writer.curr_pos.add(&math.vec2(30, 0));
 
-    // var text_writer = app.renderer.writer(math.vec2(0, 0), math.vec4(1, 1, 1, 1), 128);
-    // try text_writer.writeAll(codepoints[0..4]);
-    // try text_writer.writeAll(codepoints[4..]);
-    // inline for (codepoints) |codepoint| {
-    //     try app.renderer.reserveTexQuad(codepoint, math.vec2(x, 0), scale_vec, math.vec4(1, 1, 1, 1));
-    //     x += app.gfx.getTexSizeFromAtlas(@intFromEnum(codepoint)).x() * scale;
-    // }
+        try text_writer.writeNumber(app.working_number, .{});
+        // try text_writer.writeNumber(app.working_number, .{ .four_type = .po, .san = true, .likujo = true });
+    }
+
+    const reset_button_location = try app.renderer.renderButton(
+        math.vec2(10, 10 + number_size),
+        math.vec2(0, 0),
+        math.vec4(0.5, 0.5, 0.5, 1),
+        &.{ .o, .tawa, .e, .nanpa, .tawa, .ala },
+        64,
+        .tl,
+    );
+    if (button(reset_button_location, interact_loc)) {
+        app.working_number = 0;
+    }
+
+    const en_text = try app.renderer.writeText(math.vec2(10, number_size + reset_button_location.size.y() + 10 + 10 + Renderer.button_text_padding), 64, &.{ .en, .colon });
+
+    var last_button_location: Renderer.Bounds = .{ .pos = math.vec2(en_text.size.x(), 10 + number_size + reset_button_location.size.y() + 10), .size = math.vec2(0, 0) };
+
+    inline for (&.{
+        .{ &.{.ale}, 100 },
+        .{ &.{.mute}, 20 },
+        .{ &.{.luka}, 5 },
+        .{ &.{.tu}, 2 },
+        .{ &.{.wan}, 1 },
+    }) |item| {
+        last_button_location = try app.renderer.renderButton(
+            last_button_location.pos.add(&math.vec2(last_button_location.size.x() + 10, 0)),
+            math.vec2(0, 0),
+            math.vec4(0.5, 0.5, 0.5, 1),
+            item[0],
+            64,
+            .tl,
+        );
+        if (button(last_button_location, interact_loc)) {
+            app.working_number += item[1];
+        }
+    }
+
+    const weka_text = try app.renderer.writeText(
+        math.vec2(10, last_button_location.pos.y() + last_button_location.size.y() + 10 + Renderer.button_text_padding),
+        64,
+        &.{ .weka, .colon },
+    );
+
+    last_button_location = .{ .pos = math.vec2(weka_text.size.x(), last_button_location.pos.y() + last_button_location.size.y() + 10), .size = math.vec2(0, 0) };
+
+    inline for (&.{
+        .{ &.{.ale}, -100 },
+        .{ &.{.mute}, -20 },
+        .{ &.{.luka}, -5 },
+        .{ &.{.tu}, -2 },
+        .{ &.{.wan}, -1 },
+    }) |item| {
+        last_button_location = try app.renderer.renderButton(
+            last_button_location.pos.add(&math.vec2(last_button_location.size.x() + 10, 0)),
+            math.vec2(0, 0),
+            math.vec4(0.5, 0.5, 0.5, 1),
+            item[0],
+            64,
+            .tl,
+        );
+        if (button(last_button_location, interact_loc)) {
+            app.working_number += item[1];
+        }
+    }
 
     try app.renderer.end();
     try app.renderer.draw(pass);
