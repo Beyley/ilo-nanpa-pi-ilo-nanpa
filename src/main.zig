@@ -15,6 +15,7 @@ gfx: Gfx,
 renderer: Renderer,
 
 working_number: i64,
+format_settings: Renderer.TextWriter.NumberFormattingOptions = .{},
 
 pub fn init(app: *App) !void {
     try core.init(.{
@@ -87,12 +88,8 @@ pub fn update(app: *App) !bool {
 
     {
         var text_writer = app.renderer.writer(math.vec2(10, 10), math.vec4(1, 1, 1, 1), number_size);
-
         try text_writer.writeAll(&.{ .nanpa, .colon });
-        // text_writer.curr_pos = text_writer.curr_pos.add(&math.vec2(30, 0));
-
-        try text_writer.writeNumber(app.working_number, .{});
-        // try text_writer.writeNumber(app.working_number, .{ .four_type = .po, .san = true, .likujo = true });
+        try text_writer.writeNumber(app.working_number, app.format_settings);
     }
 
     const reset_button_location = try app.renderer.renderButton(
@@ -157,6 +154,52 @@ pub fn update(app: *App) !bool {
         if (button(last_button_location, interact_loc)) {
             app.working_number += item[1];
         }
+    }
+
+    last_button_location = .{ .pos = math.vec2(0, last_button_location.pos.y() + last_button_location.size.y() + 10), .size = math.vec2(0, 0) };
+
+    last_button_location = try app.renderer.renderButton(
+        last_button_location.pos.add(&math.vec2(last_button_location.size.x() + 10, 0)),
+        math.vec2(0, 0),
+        math.vec4(0.5, 0.5, 0.5, 1),
+        if (app.format_settings.san) &.{ .san, .li, .lon } else &.{ .san, .li, .weka },
+        64,
+        .tl,
+    );
+    if (button(last_button_location, interact_loc)) {
+        app.format_settings.san = !app.format_settings.san;
+    }
+
+    last_button_location = try app.renderer.renderButton(
+        last_button_location.pos.add(&math.vec2(last_button_location.size.x() + 10, 0)),
+        math.vec2(0, 0),
+        math.vec4(0.5, 0.5, 0.5, 1),
+        if (app.format_settings.likujo) &.{ .likujo, .li, .lon } else &.{ .likujo, .li, .weka },
+        64,
+        .tl,
+    );
+    if (button(last_button_location, interact_loc)) {
+        app.format_settings.likujo = !app.format_settings.likujo;
+    }
+
+    last_button_location = try app.renderer.renderButton(
+        last_button_location.pos.add(&math.vec2(last_button_location.size.x() + 10, 0)),
+        math.vec2(0, 0),
+        math.vec4(0.5, 0.5, 0.5, 1),
+        switch (app.format_settings.four_type) {
+            .po => &.{ .po, .li, .lon },
+            .neja => &.{ .neja, .li, .lon },
+            .none => &.{ .po, .en, .neja, .li, .weka },
+        },
+        64,
+        .tl,
+    );
+    if (button(last_button_location, interact_loc)) {
+        app.format_settings.four_type = switch (app.format_settings.four_type) {
+            .po => .neja,
+            .neja => .none,
+            .none => .po,
+        };
     }
 
     try app.renderer.end();

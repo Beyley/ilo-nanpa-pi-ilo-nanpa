@@ -280,7 +280,7 @@ pub fn textWidth(self: *Self, codepoints: []const Codepoint, text_size: f32) f32
     return width;
 }
 
-const TextWriter = struct {
+pub const TextWriter = struct {
     renderer: *Self,
     scale: f32,
     /// The original text size of the atlas
