@@ -4,13 +4,13 @@ ni li ilo nanpa. mi pali e ona kepeken ilo toki "Zig". ona kepeken sitelen lukin
 
 mi wile e ni: ona li pona tawa sina a!
 
-# o jo kama
+# o kama ko
 
-sina ken jo kama e ona lon lipu ["Releases"](https://github.com/Beyley/ilo-nanpa-pi-ilo-nanpa/releases).
+sina ken kama jo e ona lon lipu ["Releases"](https://github.com/Beyley/ilo-nanpa-pi-ilo-nanpa/releases).
 
 # o pali
 
-o jo kama e ilo toki ["Zig 0.12.0-dev.1092"](https://machengine.org/about/zig-version/).
+o kama jo e ilo toki ["Zig 0.12.0-dev.1092"](https://machengine.org/about/zig-version/).
 
 o sitelen e ni: 
 ```
