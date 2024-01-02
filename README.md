@@ -25,7 +25,7 @@ $ zig build run
 
 ![pu](res/pu.png)
 
-## sina ante e ona la ona li ken kepeken san en po en neja en likujo
+## sina ante e ona la ona kepeken san kepeken po kepeken neja kepeken likujo
 
 ### san
 
