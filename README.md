@@ -21,7 +21,7 @@ $ zig build run
 
 # o ante e nimi
 
-## taso pu
+## pu taso
 
 ![pu](res/pu.png)
 
