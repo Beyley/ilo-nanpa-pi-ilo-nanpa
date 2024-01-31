@@ -4,7 +4,7 @@ ni li ilo nanpa. mi pali e ona kepeken ilo toki "Zig". ona kepeken sitelen lukin
 
 mi wile e ni: ona li pona tawa sina a!
 
-# o kama ko
+# o kama jo
 
 sina ken kama jo e ona lon lipu ["Releases"](https://github.com/Beyley/ilo-nanpa-pi-ilo-nanpa/releases).
 
