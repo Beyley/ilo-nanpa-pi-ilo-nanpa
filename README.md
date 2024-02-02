@@ -1,6 +1,6 @@
 # ilo nanpa pi ilo nanpa
 
-ni li ilo nanpa. mi pali e ona kepeken ilo toki "Zig". ona kepeken sitelen lukin ["Fairfax Pona HD"](https://www.kreativekorp.com/software/fonts/fairfaxponahd/).
+ni li ilo nanpa. mi pali e ona kepeken ilo toki "Zig". ona li kepeken sitelen lukin ["Fairfax Pona HD"](https://www.kreativekorp.com/software/fonts/fairfaxponahd/).
 
 mi wile e ni: ona li pona tawa sina a!
 
@@ -25,7 +25,7 @@ $ zig build run
 
 ![pu](res/pu.png)
 
-## sina ante e ona la ona kepeken san kepeken po kepeken neja kepeken likujo
+## sina ante e ona la ona li kepeken nimi san kepeken nimi po kepeken nimi neja kepeken nimi likujo
 
 ### san
 
