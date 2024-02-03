@@ -42,7 +42,7 @@ pub fn getTexSizeFromAtlas(self: Self, codepoint: u21) math.Vec2 {
 }
 
 pub fn init() !Self {
-    var atlas = try Atlas.readAtlas(core.allocator);
+    const atlas = try Atlas.readAtlas(core.allocator);
 
     var codepoint_mapping = std.AutoHashMap(u21, Atlas.Bounds).init(core.allocator);
 
@@ -163,7 +163,7 @@ pub fn init() !Self {
 
     const self: Self = .{
         .vertex_buffer = blk: {
-            var vertex_buffer = core.device.createBuffer(&gpu.Buffer.Descriptor{
+            const vertex_buffer = core.device.createBuffer(&gpu.Buffer.Descriptor{
                 .label = "vertex buffer",
                 .size = @sizeOf(FontVertex) * 6,
                 .usage = .{

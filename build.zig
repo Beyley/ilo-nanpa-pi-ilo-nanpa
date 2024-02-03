@@ -14,7 +14,7 @@ pub fn build(b: *std.Build) !void {
         .src = "src/main.zig",
         .target = target,
         .optimize = optimize,
-        .deps = &[_]std.build.ModuleDependency{
+        .deps = &[_]std.Build.Module.Import{
             .{
                 .name = "mach",
                 .module = b.dependency("mach", .{

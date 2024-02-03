@@ -1,6 +1,6 @@
 # ilo nanpa pi ilo nanpa
 
-ni li ilo nanpa. mi pali e ona kepeken ilo toki "Zig". ona li kepeken sitelen lukin ["Fairfax Pona HD"](https://www.kreativekorp.com/software/fonts/fairfaxponahd/).
+ni li ilo nanpa. mi pali e ona kepeken toki ilo "Zig". ona li kepeken lukin sitelen ["Fairfax Pona HD"](https://www.kreativekorp.com/software/fonts/fairfaxponahd/).
 
 mi wile e ni: ona li pona tawa sina a!
 
@@ -10,7 +10,7 @@ sina ken kama jo e ona lon lipu ["Releases"](https://github.com/Beyley/ilo-nanpa
 
 # o pali
 
-o kama jo e ilo toki ["Zig 0.12.0-dev.1092"](https://machengine.org/about/zig-version/).
+o kama jo e toki ilo ["Zig 0.12.0-dev.1092"](https://machengine.org/about/zig-version/).
 
 o sitelen e ni: 
 ```
